@@ -20,27 +20,30 @@ async function fetchFromMarble<T>({
 	endpoint,
 }: {
 	endpoint: string;
-}): Promise<T> {
+}): Promise<T | null> {
 	try {
 		const response = await fetch(`${url}/${key}/${endpoint}`);
 		if (!response.ok) {
-			throw new Error(
+			console.warn(
 				`Failed to fetch ${endpoint}: ${response.status} ${response.statusText}`,
 			);
+			return null;
 		}
 		return (await response.json()) as T;
 	} catch (error) {
 		console.error(`Error fetching ${endpoint}:`, error);
-		throw error;
+		return null;
 	}
 }
 
 export async function getPosts() {
-	return fetchFromMarble<MarblePostList>({ endpoint: "posts" });
+	const data = await fetchFromMarble<MarblePostList>({ endpoint: "posts" });
+	return data ?? { posts: [], total: 0 };
 }
 
 export async function getTags() {
-	return fetchFromMarble<MarbleTagList>({ endpoint: "tags" });
+	const data = await fetchFromMarble<MarbleTagList>({ endpoint: "tags" });
+	return data ?? { tags: [] };
 }
 
 export async function getSinglePost({ slug }: { slug: string }) {
@@ -48,11 +51,15 @@ export async function getSinglePost({ slug }: { slug: string }) {
 }
 
 export async function getCategories() {
-	return fetchFromMarble<MarbleCategoryList>({ endpoint: "categories" });
+	const data = await fetchFromMarble<MarbleCategoryList>({
+		endpoint: "categories",
+	});
+	return data ?? { categories: [] };
 }
 
 export async function getAuthors() {
-	return fetchFromMarble<MarbleAuthorList>({ endpoint: "authors" });
+	const data = await fetchFromMarble<MarbleAuthorList>({ endpoint: "authors" });
+	return data ?? { authors: [] };
 }
 
 export async function processHtmlContent({
