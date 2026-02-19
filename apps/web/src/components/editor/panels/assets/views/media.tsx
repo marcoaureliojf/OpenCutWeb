@@ -69,7 +69,11 @@ export function MediaView() {
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
 	const processFiles = async ({ files }: { files: FileList }) => {
-		if (!files || files.length === 0) return;
+		console.log("MediaView: Starting to process files", files.length);
+		if (!files || files.length === 0) {
+			console.log("MediaView: No files selected");
+			return;
+		}
 		if (!activeProject) {
 			toast.error("No active project");
 			return;
@@ -80,9 +84,12 @@ export function MediaView() {
 		try {
 			const processedAssets = await processMediaAssets({
 				files,
-				onProgress: (progress: { progress: number }) =>
-					setProgress(progress.progress),
+				onProgress: (progress: { progress: number }) => {
+					console.log(`MediaView: Processing progress: ${progress.progress}%`);
+					setProgress(progress.progress);
+				},
 			});
+			console.log("MediaView: Files processed successfully", processedAssets.length);
 			for (const asset of processedAssets) {
 				await editor.media.addMediaAsset({
 					projectId: activeProject.metadata.id,

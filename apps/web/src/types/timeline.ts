@@ -50,6 +50,12 @@ export interface Transform {
 		y: number;
 	};
 	rotate: number;
+	crop?: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	};
 }
 
 interface BaseAudioElement extends BaseTimelineElement {

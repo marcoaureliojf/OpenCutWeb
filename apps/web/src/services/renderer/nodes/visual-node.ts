@@ -42,12 +42,19 @@ export abstract class VisualNode<
 		renderer.context.save();
 
 		const { transform, opacity } = this.params;
+		const { crop } = transform;
+
+		const drawSourceWidth = crop ? crop.width : sourceWidth;
+		const drawSourceHeight = crop ? crop.height : sourceHeight;
+		const sx = crop ? crop.x : 0;
+		const sy = crop ? crop.y : 0;
+
 		const containScale = Math.min(
-			renderer.width / sourceWidth,
-			renderer.height / sourceHeight,
+			renderer.width / drawSourceWidth,
+			renderer.height / drawSourceHeight,
 		);
-		const scaledWidth = sourceWidth * containScale * transform.scale;
-		const scaledHeight = sourceHeight * containScale * transform.scale;
+		const scaledWidth = drawSourceWidth * containScale * transform.scale;
+		const scaledHeight = drawSourceHeight * containScale * transform.scale;
 		const x = renderer.width / 2 + transform.position.x - scaledWidth / 2;
 		const y = renderer.height / 2 + transform.position.y - scaledHeight / 2;
 
@@ -61,7 +68,17 @@ export abstract class VisualNode<
 			renderer.context.translate(-centerX, -centerY);
 		}
 
-		renderer.context.drawImage(source, x, y, scaledWidth, scaledHeight);
+		renderer.context.drawImage(
+			source,
+			sx,
+			sy,
+			drawSourceWidth,
+			drawSourceHeight,
+			x,
+			y,
+			scaledWidth,
+			scaledHeight,
+		);
 		renderer.context.restore();
 	}
 }

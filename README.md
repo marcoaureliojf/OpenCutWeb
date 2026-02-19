@@ -13,7 +13,7 @@
 ## Why?
 
 - **Privacy**: Your videos stay on your device
-- **Free features**: Most basic CapCut features are now paywalled 
+- **Free features**: Most basic CapCut features are now paywalled
 - **Simple**: People want editors that are easy to use - CapCut proved that
 
 ## Features
@@ -141,6 +141,42 @@ Before you begin, ensure you have the following installed on your system:
 6. Start the development server: `bun run dev` from (inside apps/web)
 
 The application will be available at [http://localhost:3000](http://localhost:3000).
+
+## 🐳 Docker Deployment (Self-Hosted)
+
+For a production or home-lab deployment with HTTPS and Secure Context (required for media processing), we recommend using **Docker Compose** with a Reverse Proxy (like Traefik).
+
+### Deployment Steps
+
+1.  **Clone and Configure**:
+    ```bash
+    git clone https://github.com/opencut-app/opencut.git
+    cd opencut
+    cp .env.example .env
+    ```
+2.  **Edit `.env`**: Fill in the required variables, including the Traefik/Domain info:
+
+    ```bash
+    # Traefik / Network Settings
+    TRAEFIK_HOST=opencut.your-domain.com
+    TRAEFIK_NETWORK=runtipi_tipi_main_network  # Your proxy's network name
+
+    # Base URLs (Must match TRAEFIK_HOST)
+    NEXT_PUBLIC_SITE_URL=https://opencut.your-domain.com
+    NEXT_PUBLIC_BETTER_AUTH_URL=https://opencut.your-domain.com
+    ```
+
+3.  **Run with Compose**:
+    ```bash
+    docker compose up -d --build
+    ```
+
+### SSL & Secure Context
+
+Modern browsers require **HTTPS** (Secure Context) to enable `SharedArrayBuffer`, which OpenCut uses for high-performance video processing.
+
+- If you use **Traefik**, the included `docker-compose.yml` labels will automatically inject the required `COOP` and `COEP` headers.
+- If you don't have a proxy, you can uncomment the `traefik` service in `docker-compose.yml` to start a standalone instance.
 
 ## Contributing
 

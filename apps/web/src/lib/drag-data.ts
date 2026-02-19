@@ -40,6 +40,9 @@ export function hasDragData({
 }: {
 	dataTransfer: DataTransfer;
 }): boolean {
+	const hasFiles = dataTransfer.types.includes("Files");
+	if (hasFiles) return false;
+
 	return dataTransfer.types.includes(MIME_TYPE) || lastDragData !== null;
 }
 

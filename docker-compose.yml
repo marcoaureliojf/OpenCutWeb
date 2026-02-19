@@ -4,16 +4,28 @@ services:
       context: .
       dockerfile: Dockerfile
     image: opencut:local
-    ports:
-      - "3000:3000"
+    # Remove direct port 3000 access to force usage of Caddy HTTPS
+    expose:
+      - "3000"
     env_file:
       - .env
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://opencut:opencutthegoat@db:5432/opencut
-    depends_on:
-      db:
-        condition: service_healthy
+    networks:
+      - default
+      - traefik_main
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.opencut.rule=Host(`${TRAEFIK_HOST}`)"
+      - "traefik.http.routers.opencut.entrypoints=websecure"
+      - "traefik.http.routers.opencut.tls=true"
+      - "traefik.http.middlewares.opencut-headers.headers.customResponseHeaders.Cross-Origin-Embedder-Policy=require-corp"
+      - "traefik.http.middlewares.opencut-headers.headers.customResponseHeaders.Cross-Origin-Opener-Policy=same-origin"
+      - "traefik.http.routers.opencut.middlewares=opencut-headers"
+      - "traefik.http.services.opencut.loadbalancer.server.port=3000"
+      - "traefik.docker.network=${TRAEFIK_NETWORK}"
 
   db:
     image: postgres:15-alpine
@@ -29,5 +41,29 @@ services:
       timeout: 5s
       retries: 5
 
+  # OPCIONAL: Se você não tiver um Traefik rodando e quiser um pronto:
+  # traefik:
+  #   image: traefik:v3.1
+  #   command:
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedbydefault=false"
+  #     - "--entrypoints.web.address=:80"
+  #     - "--entrypoints.websecure.address=:443"
+  #     - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+  #     - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #   networks:
+  #     - traefik_main
+
 volumes:
   pgdata:
+
+networks:
+  default:
+  traefik_main:
+    external: true
+    name: ${TRAEFIK_NETWORK}
