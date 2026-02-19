@@ -32,6 +32,7 @@ export function Captions() {
 	const [transcriptionMode, setTranscriptionMode] = useState<"local" | "server">("local");
 	const [selectedLanguage, setSelectedLanguage] =
 		useState<TranscriptionLanguage>("auto");
+	const [captionPosition, setCaptionPosition] = useState<"top" | "middle" | "bottom">("bottom");
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [processingStep, setProcessingStep] = useState("");
 	const [error, setError] = useState<string | null>(null);
@@ -134,6 +135,9 @@ export function Captions() {
 				index: 0,
 			});
 
+			// Map position to Y coordinate
+			const yPos = captionPosition === "top" ? -400 : captionPosition === "middle" ? 0 : 400;
+
 			for (let i = 0; i < captionChunks.length; i++) {
 				const caption = captionChunks[i];
 				editor.timeline.insertElement({
@@ -146,6 +150,13 @@ export function Captions() {
 						startTime: caption.startTime,
 						fontSize: 10,
 						fontWeight: "bold",
+						transform: {
+							...DEFAULT_TEXT_ELEMENT.transform,
+							position: {
+								x: 0,
+								y: yPos
+							}
+						}
 					},
 				});
 			}
@@ -220,6 +231,23 @@ export function Captions() {
 									{language.name}
 								</SelectItem>
 							))}
+						</SelectContent>
+					</Select>
+				</div>
+
+				<div className="flex flex-col gap-3">
+					<Label>Position</Label>
+					<Select
+						value={captionPosition}
+						onValueChange={(value) => setCaptionPosition(value as any)}
+					>
+						<SelectTrigger>
+							<SelectValue placeholder="Position" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="top">Top</SelectItem>
+							<SelectItem value="middle">Middle</SelectItem>
+							<SelectItem value="bottom">Bottom</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
