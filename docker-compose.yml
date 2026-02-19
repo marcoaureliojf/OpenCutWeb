@@ -3,15 +3,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: opencut:local
-    # Remove direct port 3000 access to force usage of Caddy HTTPS
-    expose:
-      - "3000"
+    restart: always
+    ports:
+      - "3000:3000"
     env_file:
       - .env
     environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://opencut:opencutthegoat@db:5432/opencut
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/opencutweb
+    depends_on:
+      - db
     networks:
       - default
       - traefik_main
@@ -26,41 +26,47 @@ services:
       - "traefik.http.routers.opencut.middlewares=opencut-headers"
       - "traefik.http.services.opencut.loadbalancer.server.port=3000"
       - "traefik.docker.network=${TRAEFIK_NETWORK}"
+    volumes:
+      - transcription_tmp:/app/tmp/transcriptions
 
   db:
     image: postgres:15-alpine
+    restart: always
     environment:
-      - POSTGRES_USER=opencut
-      - POSTGRES_PASSWORD=opencutthegoat
-      - POSTGRES_DB=opencut
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password_change_me
+      POSTGRES_DB: opencutweb
     volumes:
       - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U opencut -d opencut"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+    networks:
+      - default
 
-  # OPCIONAL: Se você não tiver um Traefik rodando e quiser um pronto:
-  # traefik:
-  #   image: traefik:v3.1
-  #   command:
-  #     - "--providers.docker=true"
-  #     - "--providers.docker.exposedbydefault=false"
-  #     - "--entrypoints.web.address=:80"
-  #     - "--entrypoints.websecure.address=:443"
-  #     - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-  #     - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
-  #   networks:
-  #     - traefik_main
+  worker:
+    build:
+      context: ./apps/worker
+    env_file:
+      - .env
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - transformer_cache:/root/.cache/huggingface
+      - transcription_tmp:/app/tmp/transcriptions
+    networks:
+      - default
 
 volumes:
   pgdata:
+  transformer_cache:
+  transcription_tmp:
 
 networks:
   default:
